@@ -38,6 +38,8 @@ class DemoOrderSeeder extends Seeder
         $this->placeOrder($sara, $sunriseOrchard, 0, OrderStatus::ReadyForPickup, ['Valley mangoes' => 3, 'Bananas' => 1]);
         $this->placeOrder($sara, $crustAndCrumb, 0, OrderStatus::Accepted, ['Sourdough loaf' => 2]);
         $this->placeOrder($bilal, $greenValley, 0, OrderStatus::Placed, ['Spinach' => 2, 'Cucumbers' => 1]);
+        // proactive inbox demo: Green Valley ke paas 2 alag pending orders, reply se sirf ek accept karke dikhaya ja sake
+        $this->placeOrder($sara, $greenValley, 0, OrderStatus::Placed, ['Vine tomatoes' => 2, 'Fresh mint' => 1]);
         $this->placeOrder($sara, $desiDairy, 0, OrderStatus::Placed, ['Homemade yogurt' => 1, 'Desi butter' => 1]);
         // El Paso Mountain time pe hai - "MT" label dikhane ke liye
         $this->placeOrder($ayesha, $mesillaValley, 0, OrderStatus::Accepted, ['Heirloom tomatoes' => 2, 'Roasted green chile salsa' => 1]);

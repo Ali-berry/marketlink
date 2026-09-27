@@ -38,7 +38,11 @@ class FarmerAgentToolkit
                 'product_name' => ['type' => 'string', 'description' => 'Name of the product to mark sold out'],
             ], ['product_name']),
 
-            $this->schema('get_pending_orders', 'List orders waiting for the farmer to accept or decline.', [], []),
+            $this->schema('get_pending_orders', 'List orders waiting for the farmer to accept or decline, with their items.', [], []),
+
+            $this->schema('get_order_details', 'Get the full details of one of the farmer\'s own orders - items, customer, pickup and status.', [
+                'order_number' => ['type' => 'string', 'description' => 'The order number, e.g. ML-1234'],
+            ], ['order_number']),
 
             $this->schema('update_order_status', 'Move one of the farmer\'s orders to a new status. Declining needs a reason for the customer - ask the farmer for one if they haven\'t given it.', [
                 'order_id' => ['type' => 'integer', 'description' => 'The id of the order to update'],
@@ -65,6 +69,7 @@ class FarmerAgentToolkit
             'update_stock' => $this->updateStock($farmer, $arguments),
             'mark_sold_out' => $this->markSoldOut($farmer, $arguments),
             'get_pending_orders' => $this->getPendingOrders($farmer),
+            'get_order_details' => $this->getOrderDetails($farmer, $arguments),
             'update_order_status' => $this->updateOrderStatus($actor, $farmer, $arguments),
             'get_sales_insights' => $this->getSalesInsights($farmer, $arguments),
             default => ['error' => "Unknown tool: {$toolName}"],
@@ -119,8 +124,7 @@ class FarmerAgentToolkit
     {
         $orders = $farmer->orders()
             ->where('status', OrderStatus::Placed->value)
-            ->with('customer')
-            ->withCount('items')
+            ->with(['customer', 'items'])
             ->orderBy('pickup_date')
             ->take(10)
             ->get();
@@ -132,11 +136,44 @@ class FarmerAgentToolkit
                 'order_number' => $order->order_number,
                 'customer_name' => $order->customer->name,
                 'pickup_date' => $order->pickup_date->toFormattedDateString(),
-                'items_count' => $order->items_count,
+                'items' => $this->orderItemsForAgent($order),
                 'total_amount' => (float) $order->total_amount,
                 'total_text' => MoneyFormatter::format($order->total_amount),
             ])->all(),
         ];
+    }
+
+    private function getOrderDetails($farmer, array $arguments): array
+    {
+        $order = $farmer->orders()
+            ->where('order_number', $arguments['order_number'] ?? '')
+            ->with(['customer', 'items'])
+            ->first();
+
+        if (! $order) {
+            return ['error' => "That order doesn't belong to this stall."];
+        }
+
+        return [
+            'order_number' => $order->order_number,
+            'status' => $order->status->label(),
+            'customer_name' => $order->customer->name,
+            'items' => $this->orderItemsForAgent($order),
+            'total_text' => MoneyFormatter::format($order->total_amount),
+            'pickup_summary' => $order->pickupSummary(),
+            'customer_note' => $order->customer_note,
+            'is_urgent' => $order->is_urgent,
+        ];
+    }
+
+    private function orderItemsForAgent(Order $order): array
+    {
+        return $order->items->map(fn ($item) => [
+            'product_name' => $item->product_name,
+            'quantity' => $item->quantity,
+            'unit' => $item->unit,
+            'line_total_text' => MoneyFormatter::format($item->line_total),
+        ])->all();
     }
 
     private function updateOrderStatus(User $actor, $farmer, array $arguments): array

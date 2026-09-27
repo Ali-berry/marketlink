@@ -9,6 +9,7 @@ use App\Models\FarmerProfile;
 use App\Models\Market;
 use App\Models\User;
 use App\Notifications\FarmerApprovalStatusChanged;
+use App\Services\FarmerApprovalService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,6 +23,10 @@ use Laravel\Socialite\Facades\Socialite;
 
 class GoogleController extends Controller
 {
+    public function __construct(private readonly FarmerApprovalService $farmerApprovalService)
+    {
+    }
+
     public function redirect(): RedirectResponse
     {
         return Socialite::driver('google')->redirect();
@@ -128,6 +133,7 @@ class GoogleController extends Controller
             $farmerProfile->markets()->attach($selectedMarket->id);
 
             $user->notify(new FarmerApprovalStatusChanged($farmerProfile));
+            $this->farmerApprovalService->notifyAdminsOfNewSignup($farmerProfile);
         }
 
         event(new Registered($user));

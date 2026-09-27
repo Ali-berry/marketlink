@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Spatie\Permission\Traits\HasRoles;
 
 // MustVerifyEmail jaan boojh ke nahi - demo mein mail log driver pe hai, verify link kisi tak nahi pohanchta.
@@ -73,6 +74,14 @@ class User extends Authenticatable
     public function isCustomer(): bool
     {
         return $this->role === UserRole::Customer;
+    }
+
+    // proactive inbox aur admin agent toolkit dono "us permission wale sab admins" chahte hain
+    public static function adminsWithPermission(string $permission): Collection
+    {
+        return static::where('role', UserRole::Admin->value)->get()
+            ->filter(fn (self $admin) => $admin->can($permission))
+            ->values();
     }
 
     // /dashboard kahan bheje. Community Moderator ke paas general admin permission nahi,

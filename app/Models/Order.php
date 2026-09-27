@@ -168,6 +168,19 @@ class Order extends Model
         return $this->market->localNow()->toDateString() >= $this->pickup_date->toDateString();
     }
 
+    // "2 kg carrots, 1 bunch spinach" - 3 se zyada items hon to pehle 2 + "and 2 more"
+    public function itemsSummaryText(): string
+    {
+        $items = $this->items;
+        $itemText = fn (OrderItem $item) => "{$item->quantity} {$item->unit} {$item->product_name}";
+
+        if ($items->count() <= 3) {
+            return $items->map($itemText)->join(', ', ' and ');
+        }
+
+        return $items->take(2)->map($itemText)->join(', ').' and '.($items->count() - 2).' more';
+    }
+
     // "pickup se X ghante pehle cutoff" ka hisaab sirf yahan hai - order aur checkout dono yahi use karte hain.
     // time market ke timezone mein, El Paso ka 8 AM Dallas ke 8 AM se ek ghanta baad hai
     public static function isWithinCutoff(Market $market, Carbon|string $pickupDate, string $slotStartsAt, ?int $cutoffHours): bool

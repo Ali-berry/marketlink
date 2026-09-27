@@ -10,6 +10,7 @@ use App\Models\FarmerProfile;
 use App\Models\Market;
 use App\Models\User;
 use App\Notifications\FarmerApprovalStatusChanged;
+use App\Services\FarmerApprovalService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +19,10 @@ use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
+    public function __construct(private readonly FarmerApprovalService $farmerApprovalService)
+    {
+    }
+
     public function create(): View
     {
         return view('auth.register', [
@@ -63,6 +68,7 @@ class RegisteredUserController extends Controller
 
             // admin approve/suspend wala notification hi - us ka "pending" hissa isi ke liye bana hai
             $user->notify(new FarmerApprovalStatusChanged($farmerProfile));
+            $this->farmerApprovalService->notifyAdminsOfNewSignup($farmerProfile);
         }
 
         event(new Registered($user));

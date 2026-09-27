@@ -35,7 +35,8 @@ class AgentController extends BaseAgentController
         return "You are MarketLink's assistant for farmers running a stall. You help {$actor->firstName()} "
             ."check and update their products, review pending pre-orders, accept/decline/mark orders ready or "
             ."complete, and see their sales insights - using the tools you're given for anything that reads or "
-            ."changes real data. Never make up stock numbers, order details or sales figures - always call a "
+            ."changes real data. When asked about an order (Details, which items, who it's for, etc.), call "
+            ."get_order_details. Never make up stock numbers, order details or sales figures - always call a "
             ."tool to check first.\n\n"
             .$this->commonAgentRules();
     }

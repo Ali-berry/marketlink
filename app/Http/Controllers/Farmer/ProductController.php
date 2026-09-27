@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Farmer;
 
 use App\Enums\ProductAvailability;
+use App\Enums\UserRole;
+use App\Helpers\MoneyFormatter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Farmer\StoreProductRequest;
 use App\Http\Requests\Farmer\UpdateProductAvailabilityRequest;
@@ -10,6 +12,8 @@ use App\Http\Requests\Farmer\UpdateProductRequest;
 use App\Models\FarmerProfile;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\User;
+use App\Services\Agent\AgentProactiveMessenger;
 use App\Services\ProductStockUpdater;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,6 +23,10 @@ use Illuminate\View\View;
 
 class ProductController extends Controller
 {
+    public function __construct(private readonly AgentProactiveMessenger $proactiveMessenger)
+    {
+    }
+
     public function index(Request $request): View
     {
         $farmer = $request->user()->farmerProfile;
@@ -65,7 +73,26 @@ class ProductController extends Controller
             'image_path' => $request->hasFile('image') ? $request->file('image')->store('products', 'public') : null,
         ]);
 
+        $this->notifyAdminsOfNewProduct($farmer, $product);
+
         return redirect()->route('farmer.products.edit', $product)->with('success', $product->name.' was added to your stall.');
+    }
+
+    // moderate-content wale sab admins ko naya product dikha do
+    private function notifyAdminsOfNewProduct(FarmerProfile $farmer, Product $product): void
+    {
+        foreach (User::adminsWithPermission('moderate-content') as $admin) {
+            $this->proactiveMessenger->send(
+                recipient: $admin,
+                userType: UserRole::Admin,
+                content: "{$farmer->stall_name} added a new product: {$product->name}, "
+                    .MoneyFormatter::format($product->price)."/{$product->unit}. Looks okay, or should I hide it?",
+                contextType: 'product',
+                contextId: $product->id,
+                contextLabel: $product->name,
+                actions: ['Looks okay', 'Hide it', 'Details'],
+            );
+        }
     }
 
     public function edit(Request $request, Product $product): View

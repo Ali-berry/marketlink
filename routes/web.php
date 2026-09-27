@@ -143,6 +143,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::prefix('agent')->name('agent.')->controller(CustomerAgentController::class)->group(function () {
             Route::post('/chat', 'chat')->middleware('throttle:agent-chat')->name('chat');
             Route::get('/history', 'history')->name('history');
+            Route::get('/unread-count', 'unreadCount')->name('unread-count');
+            Route::post('/mark-read', 'markRead')->name('mark-read');
         });
     });
 
@@ -201,6 +203,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::prefix('agent')->name('agent.')->controller(FarmerAgentController::class)->group(function () {
             Route::post('/chat', 'chat')->middleware('throttle:agent-chat')->name('chat');
             Route::get('/history', 'history')->name('history');
+            Route::get('/unread-count', 'unreadCount')->name('unread-count');
+            Route::post('/mark-read', 'markRead')->name('mark-read');
         });
     });
 
@@ -280,6 +284,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::prefix('agent')->name('agent.')->controller(AdminAgentController::class)->group(function () {
             Route::post('/chat', 'chat')->middleware('throttle:agent-chat')->name('chat');
             Route::get('/history', 'history')->name('history');
+            Route::get('/unread-count', 'unreadCount')->name('unread-count');
+            Route::post('/mark-read', 'markRead')->name('mark-read');
         });
     });
 });

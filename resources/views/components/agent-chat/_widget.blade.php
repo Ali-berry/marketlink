@@ -1,13 +1,20 @@
 {{--
-    $chatRoute, $historyRoute, $label chahiye - customer / farmer / admin agent-chat files se include hota hai.
+    $chatRoute, $historyRoute, $unreadCountRoute, $markReadRoute, $label chahiye - customer / farmer / admin agent-chat files se include hota hai.
     page pe ek hi widget hota hai, panel.blade.php role dekh ke chunta hai
 --}}
-<div x-data="{ open: false }" @open-agent-chat.window="open = true" data-agent-widget data-chat-url="{{ $chatRoute }}" data-history-url="{{ $historyRoute }}"
+<div x-data="{ open: false, unreadCount: 0 }"
+     x-init="fetch('{{ $unreadCountRoute }}', { headers: { Accept: 'application/json' } }).then((r) => r.json()).then((d) => unreadCount = d.count).catch(() => {});
+             setInterval(() => { if (! open) fetch('{{ $unreadCountRoute }}', { headers: { Accept: 'application/json' } }).then((r) => r.json()).then((d) => unreadCount = d.count).catch(() => {}); }, 60000)"
+     @open-agent-chat.window="open = true; $dispatch('agent-chat-opened')"
+     data-agent-widget data-chat-url="{{ $chatRoute }}" data-history-url="{{ $historyRoute }}" data-mark-read-url="{{ $markReadRoute }}"
      class="fixed bottom-6 right-6 z-40">
 
-    <button type="button" @click="open = ! open" class="icon-chip h-14 w-14 bg-leaf-500 text-2xl text-white shadow-lg transition hover:bg-leaf-600" aria-label="{{ $label }}">
+    <button type="button" @click="open = ! open; if (open) { unreadCount = 0; $dispatch('agent-chat-opened'); }"
+            class="icon-chip relative h-14 w-14 bg-leaf-500 text-2xl text-white shadow-lg transition hover:bg-leaf-600" aria-label="{{ $label }}">
         <iconify-icon icon="tabler:message-chatbot" x-show="! open"></iconify-icon>
         <iconify-icon icon="tabler:x" x-show="open" x-cloak></iconify-icon>
+        <span x-show="unreadCount > 0" x-cloak x-text="unreadCount > 9 ? '9+' : unreadCount"
+              class="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-tomato-500 px-1 text-[11px] font-semibold text-white"></span>
     </button>
 
     <div x-show="open" x-cloak x-transition
@@ -25,6 +32,14 @@
 
         <div class="flex-1 space-y-3 overflow-y-auto p-4" data-agent-message-list>
             <p class="text-center text-sm text-soil-muted" data-agent-empty-hint>Ask me anything about your account...</p>
+        </div>
+
+        <div data-agent-reply-quote hidden class="flex items-start gap-2 border-t border-cream-dark bg-cream px-3 py-2 text-xs text-soil-muted">
+            <iconify-icon icon="tabler:corner-up-left" class="mt-0.5 shrink-0"></iconify-icon>
+            <p class="flex-1 truncate" data-agent-reply-quote-text></p>
+            <button type="button" data-agent-reply-quote-clear aria-label="Cancel reply" class="shrink-0 text-soil-muted hover:text-soil">
+                <iconify-icon icon="tabler:x"></iconify-icon>
+            </button>
         </div>
 
         <form data-agent-form class="flex items-center gap-2 border-t border-cream-dark p-3">

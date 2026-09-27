@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             DemoAccountSeeder::class,
             DemoOrderSeeder::class,
             CommunityPostSeeder::class,
+            ProactiveInboxSeeder::class,
         ]);
     }
 }
